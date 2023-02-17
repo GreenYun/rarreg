@@ -1,10 +1,8 @@
-use core::fmt;
-use core::ops::Index;
+use core::{fmt, ops::Index};
 
 use crc32fast::Hasher;
 
-use super::tools::keygen;
-use super::tools::sign::sign;
+use super::tools::{keygen, sign::sign};
 
 pub struct RegInfo {
     username: String,
@@ -14,7 +12,8 @@ pub struct RegInfo {
 }
 
 impl RegInfo {
-    pub fn new(username: String, lic_type: String) -> RegInfo {
+    #[must_use]
+    pub fn new(username: String, lic_type: String) -> Self {
         // Hardcoded Vec instead of re-generating every time
         let rar_priv_key = // keygen::gen_priv_key("".to_string());
         vec![
@@ -23,39 +22,36 @@ impl RegInfo {
             0xfe, 0x59,
         ];
 
-        let user_priv_key = keygen::gen_priv_key(username.to_owned());
-        let user_pub_key = keygen::calc_pub_key(user_priv_key);
+        let user_priv_key = keygen::gen_priv_key(username.clone());
+        let user_pub_key = keygen::calc_pub_key(&user_priv_key);
         let user_compressed_pub_key = keygen::compress_pub_key(user_pub_key);
 
-        let tmp = format!("{:064x}", user_compressed_pub_key);
+        let tmp = format!("{user_compressed_pub_key:064x}");
         let data3 = format!("60{}", tmp.index(0..48));
 
         let d3_priv_key = keygen::gen_priv_key(data3.clone());
-        let d3_pub_key = keygen::calc_pub_key(d3_priv_key);
+        let d3_pub_key = keygen::calc_pub_key(&d3_priv_key);
         let d3_compressed_pub_key = keygen::compress_pub_key(d3_pub_key);
 
-        let data0 = format!("{:064x}", d3_compressed_pub_key);
+        let data0 = format!("{d3_compressed_pub_key:064x}");
 
         let uid = format!("{:}{:}", tmp.index(48..), data0.index(0..4));
 
-        let (r, s) = sign(lic_type.clone(), rar_priv_key.clone());
-        let data1 = format!("60{:060x}{:060x}", s, r);
+        let (r, s) = sign(lic_type.clone(), &rar_priv_key);
+        let data1 = format!("60{s:060x}{r:060x}");
 
-        let tmp = format!("{}{}", username, data0);
-        let (r, s) = sign(tmp, rar_priv_key);
-        let data2 = format!("60{:060x}{:060x}", s, r);
+        let tmp = format!("{username}{data0}");
+        let (r, s) = sign(tmp, &rar_priv_key);
+        let data2 = format!("60{s:060x}{r:060x}");
 
-        let tmp = format!(
-            "{}{}{}{}{}{}",
-            lic_type, username, data0, data1, data2, data3
-        );
+        let tmp = format!("{lic_type}{username}{data0}{data1}{data2}{data3}");
 
         let mut hasher = Hasher::new();
         hasher.update(tmp.as_bytes());
         let checksum = !hasher.finalize();
-        let checksum = format!("{:010}", checksum);
+        let checksum = format!("{checksum:010}");
 
-        RegInfo {
+        Self {
             username,
             lic_type,
             uid,
@@ -100,16 +96,7 @@ UID={}
 {}
 {}
 {}",
-            self.username,
-            self.lic_type,
-            self.uid,
-            data[0],
-            data[1],
-            data[2],
-            data[3],
-            data[4],
-            data[5],
-            data[6],
+            self.username, self.lic_type, self.uid, data[0], data[1], data[2], data[3], data[4], data[5], data[6],
         )?;
 
         Ok(())

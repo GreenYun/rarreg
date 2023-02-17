@@ -2,8 +2,9 @@ use std::convert::TryInto;
 
 use sha1::{Digest, Sha1};
 
-pub fn sha1(msg: Vec<u8>) -> Vec<u8> {
-    let result = Sha1::digest(&msg);
+#[must_use]
+pub fn sha1(msg: &[u8]) -> Vec<u8> {
+    let result = Sha1::digest(msg);
 
     let mut ret: Vec<u8> = vec![];
     for i in 0..5 {

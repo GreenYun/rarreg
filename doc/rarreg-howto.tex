@@ -6,35 +6,41 @@
 \usepackage{hyperref}
 
 \begin{document}
-\title{How to Register WinRAR for a License File}
+\title{How to Register WinRAR with a Self-Generated License File}
 \author{GreenYun}
 \maketitle
 
 \section{Introduction}
-WinRAR is a file archiver developed by Eugene Roshal.
-Trail version of WinRAR can be download and distributed freely.
+WinRAR is a file (un)archiving and (de)compressing program developed by Eugene Roshal.
+Trial version of WinRAR can be downloaded and distributed without cost.
 Sold and supported by win.rar GmbH, WinRAR is allowed to be used in a 40-day test period.
-A license should be purchased to continue using the software.
+In case of expiry, a license should be purchased to continue using the software (legally).
 
-After a person/organization/company pay to win.rar GmbH, one will receive a file named ``RARreg.key'' for registering the software.
-The file may be sent on a CD or via email. Put the file and the installer within a same directory or copy it to the installation directory and complete the registration.
+After a person/organization/company pay to win.rar GmbH, one will receive a file named ``\texttt{rarreg.key}'' for registering the software.
+The file may be sent within a CD or via email.
+To put the file and the installer together or to copy it to the installation destination can complete the registration.
+(Refer the official docs for more details.)
 
 The proper way to register for a license file is pay to win.rar GmbH.
-Yet this article will discuss the generation process of ``RARreg.key''. (Valid from version 4.x till current.)
+Yet this article will discuss the generation process of ``\texttt{rarreg.key}''. (Valid from version 4.x till current.)
 
 \section{Prerequisites}
-To generate the license file, one must provide his name or the company name --- referred to as ``Name''. Name containing characters other than ASCII characters is discouraged. (May lead to wrong key.)
+To generate the license file, one must provide his name or the company name --- referred to as ``Name''.
+Name containing characters other than ASCII characters is discouraged. (May lead to wrong key.)
 
 Another information is provided by the receipt after the payment.
-``License Type'' is a string that usually describes how many copies is authorized the buyer to keep.
+``License Type'' is a string that usually describes how many registered copies is authorized.
 For instance, ``Single PC usage license'', ``1000 PC usage license'', etc.
 
 \section{A Variant of SHA-1 Algorithm}\label{SHA-1}
-WinRAR adopted SHA-1 algorithm as message hash method. In general SHA-1 algorithm implementation, the digest $S$ is combined with 5 state values as
+WinRAR adopted SHA-1 algorithm as message hash method.
+In general SHA-1 algorithm implementation, the digest $S$ is combined with 5 state values as
 \[S=S_0S_1S_2S_3S_4\]
 where $S_i$ ($i\in\left\{0,1,2,3,4\right\}$) are 32-bit unsigned integers.
 
-The extra step before generate $S$ is doing byte-wise reverse for each $S_i$. After that concatenate them as $S$, a 160-bit unsigned integer. Note that we will store $S$ or other data discussed below in big-endian (or network order) --- the most significant byte in the front (or ``on the left'').
+The extra step before generate $S$ is doing byte-wise reverse for each $S_i$.
+After that, concatenate them as $S$, a 160-bit unsigned integer.
+Note that we will store $S$ or other data discussed below in big-endian (or network order) --- the most significant byte in the front (or ``on the left'').
 
 \subsection{Yet Another Variant}\label{YA-SHA-1}
 There is another SHA-1 function used by WinRAR with all initial state values set to zero.
@@ -85,8 +91,9 @@ And the order of $G$:
 WinRAR use some string (ASCII) as seed to generate private--public key pair.
 
 \subsubsection{The Private Key}
-\paragraph{First, generate hash digest for the input message.}
-Calculate the digest for the input message if the length of input message is not zero, use the method described in section \ref{SHA-1}. Assign the digest to $g$.
+\paragraph{First, generate hash digest from the input message.}
+Calculate the digest for the input message if the length of input message is not zero, use the method described in section \ref{SHA-1}.
+Assign the digest to $g$.
 
 If zero-length string is input, directly assign
 \[g=\mathtt{CDE43B4C6847B9D5DC5EF4A350265329EB3EB781}\]
@@ -96,7 +103,8 @@ We will use $\parallel$ to denote ``concatenation'', which means a message $M$ s
 \[M=g\parallel c\]
 which is a 25-byte stream.
 
-\paragraph{The loop strats} by setting the counter $c$ to $1$. Send $M$ as message to the SHA-1 function described in section \ref{SHA-1}, and store the digest as $S$.
+\paragraph{The loop strats} by setting the counter $c$ to $1$.
+Send $M$ as message to the SHA-1 function described in section \ref{SHA-1}, and store the digest as $S$.
 Obviously, $S$ is a 20-byte octet stream, denoted as
 \[S=S_{19}S_{18}\cdots S_1S_0\]
 in network order, where $S_i$ ($i\in\left\{0,1,\cdots,18,19\right\}$) are the bytes.
@@ -105,7 +113,7 @@ Assume $k$ is another octet stream, with zero-length before the loop starts.
 The most least two bytes of $S$ will be taken to append to the left side of $k$:
 \[k=S_1\parallel S_0\parallel k\]
 
-Loop this process for 15 rounds, after each round increment $c$ by 1 and update to $M$.
+Repeat this process for 15 rounds, after each round increment $c$ by 1 and update to $M$.
 
 If the digest after the $i$-time loop is denoted as $S^i$, the final $k$ after all 15 round will looks like:
 \[k=S^{15}_1S^{15}_0S^{14}_1S^{14}_0\cdots S^2_1S^2_0S^1_1S^1_0\]
@@ -118,7 +126,7 @@ and this is the private key we generated.
 As the base point $G$ on the elliptic curve is known (section \ref{curve}), the public key is calculated by multiplying the private key $k$ to the base point, according to elliptic curve arithmetics
 \[P=k\cdot G\]
 
-\paragraph{To verify the key generator,} check if $k_0$ (as described before) generates $P=P_0$, and
+\paragraph{To verify if the key generator works well,} generate $P=P_0$ from $k_0$ (which is described before), and check
 \begin{align*}
       P_0 & =(x_P,y_P)                                                                 \\
       x_P & =\mathtt{3861220ED9B36C9753DF09A159DFB148135D495DB3AF8373425EE9A28884BA1A} \\
@@ -149,7 +157,7 @@ A message $M$ is signed using a private key $k$, following these steps:
       \item Check if $s=0$, go to step \ref{signing-start} or obtain signature $\left(r,s\right)$.
 \end{enumerate}
 
-\section{The Generation of the License}
+\section{The Generation of the Whole License}
 Assume the input message ``Name'' and ``License Type'' are denoted as $U$ and $L$, and follow the next steps to generate the license:
 \begin{enumerate}
       \item Follow the steps in section \ref{key-gen} to obtain private--public key pair with input $U$, and convert to the compressed public key form $\tilde{P}_U$;
@@ -163,7 +171,7 @@ Assume the input message ``Name'' and ``License Type'' are denoted as $U$ and $L
       \item Let $I$ be a 20-character string that is constructed as follows:
             \[I=s^-\parallel D_{0,0}D_{0,1}D_{0,2}D_{0,3}\]
             where $D_{0,i}$ is the $i$th character of the string $D_0$;\\
-            (\emph{Note:} In practice, WinRAR does not case the contents of $I$ at all.)
+            (\emph{Note:} In practice, WinRAR does not care the contents of $I$ at all.)
       \item Use the algorithm described in \ref{sign} with $L$ as message input and $k_0$ as private key input, obtain signature $\left(r_L,s_L\right)$;
       \item Convert $r_L$ and $s_L$ into hexadecimal string form, $s_L^+$ and $s_L^-$, pad each with \texttt{0} on its left side until both length are 60; (Remain unchanged if the length is greater than 60)
       \item Let $D_1$ be a string that is constructed as follows:
@@ -187,7 +195,7 @@ Assume the input message ``Name'' and ``License Type'' are denoted as $U$ and $L
 \textbf{The second line:} $U$.\\
 \textbf{The third line:} $L$.\\
 \textbf{The fourth line:} combined with a string literal \texttt{"UID="} and $I$.\\
-\textbf{The following lines:} $D$ separated into 7 lines, while the first 6 lines have 54 characters each.
+\textbf{The following lines:} $D$, which is separated into 7 lines, with the first 6 lines consisting 54 characters each.
 
 \section*{Reference}
 \begin{enumerate}

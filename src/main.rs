@@ -4,7 +4,7 @@ use rarreg::rarreg;
 
 macro_rules! get_help {
     () => {
-        eprint!(
+        eprintln!(
             r#"Usage:
     rarreg "Name" "Licence Type"
 
@@ -24,8 +24,5 @@ fn main() {
         exit(-1);
     }
 
-    println!(
-        "{}",
-        rarreg::RegInfo::new(args[1].to_owned(), args[2].to_owned())
-    );
+    println!("{}", rarreg::RegInfo::new(args[1].clone(), args[2].clone()));
 }
